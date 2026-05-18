@@ -1,3 +1,21 @@
+function showFallback(err) {
+    const l = document.getElementById('loader'); if(l) l.style.display = 'none';
+    const c = document.getElementById('main-canvas'); if(c) c.style.display = 'none';
+    const errBox = document.createElement('div');
+    errBox.style = "position:fixed;top:10px;left:10px;background:red;color:white;padding:10px;z-index:9999;font-family:monospace;max-width:90%;word-wrap:break-word;";
+    errBox.innerText = "CRITICAL ERROR: " + (err ? err.message : "WebGL not supported.");
+    document.body.appendChild(errBox);
+    document.querySelectorAll('.s-headline, .s-body, .s-cta').forEach(el => el.classList.add('vis'));
+    const sr = document.getElementById('scroll-root'); if(sr) sr.style.transform = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+if (!window.WebGLRenderingContext) {
+    showFallback();
+} else {
+try {
+        let sceneReady = false;
+
 // ════════════════════════════════════════
         // CORE SETUP
         // ════════════════════════════════════════
@@ -703,6 +721,7 @@
 
         function triggerGlitch() {
             if (isMobile) return;
+            if (typeof sceneReady !== 'undefined' && !sceneReady) return;
             const now = performance.now();
             if (isGlitching || now - lastGlitch < 500) return;
             const loader = document.getElementById('loader');
@@ -1131,6 +1150,13 @@
         updateScrollHeight();
         requestAnimationFrame(animate);
 
+        setTimeout(() => {
+            if (loadPct < 100) {
+                loadedImgs = 6; // Force skip
+                loadPct = 100;
+            }
+        }, 4000);
+
         const loadInterval = setInterval(() => {
             loadPct += Math.random() * 4 + 1;
             if (loadPct >= 99 && loadedImgs < 6) loadPct = 99; // wait for images
@@ -1158,6 +1184,7 @@
                         
                         setTimeout(() => {
                             if (loader) loader.style.display = 'none';
+                            sceneReady = true;
                             // Hero text reveal
                             document.getElementById('l-s0').classList.add('vis');
                             document.getElementById('h-s0').classList.add('vis');
@@ -1238,3 +1265,8 @@
 
         document.querySelectorAll('.coll-card').forEach(c => c.addEventListener('mouseenter', () => playEngRev(85, null, 0.3)));
         document.querySelectorAll('.s-cta, .mpick').forEach(el => el.addEventListener('click', () => playEngRev(110, 280, 0.4)));
+
+} catch(err) {
+    showFallback(err);
+}
+}

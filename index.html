@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>BMW — The Ultimate Driving Machine</title>
+    
+    <meta name="description" content="BMW — The Ultimate Driving Machine. Experience the most cinematic automotive website ever built.">
+    <meta name="keywords" content="BMW, M4, i7, X5, M8, luxury car, ultimate driving machine">
+    <meta property="og:title" content="BMW — The Ultimate Driving Machine">
+    <meta property="og:description" content="A cinematic 3D BMW experience">
+    <meta property="og:image" content="https://images.unsplash.com/photo-1555215695-3004980ad54e?w=1200">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚗</text></svg>">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://images.unsplash.com">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+    <link rel="dns-prefetch" href="https://images.unsplash.com">
+
+    <style>
+        /* INLINED LOADER CSS */
+        #loader { position: fixed; inset: 0; z-index: 9000; background: #000507; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3rem; }
+        .ldr-brand { font-family: 'Bebas Neue', sans-serif; font-size: clamp(5rem, 15vw, 12rem); letter-spacing: .15em; line-height: 1; color: transparent; -webkit-text-stroke: 1px rgba(255, 255, 255, .15); position: relative; }
+        .ldr-fill { position: absolute; inset: 0; color: #e8f0f8; -webkit-text-stroke: 0; clip-path: inset(0 100% 0 0); -webkit-clip-path: inset(0 100% 0 0); transition: clip-path .05s linear, -webkit-clip-path .05s linear; }
+        .ldr-pct { font-family: 'Bebas Neue', sans-serif; font-size: 13px; letter-spacing: .4em; color: #00aaff; }
+        .ldr-line { width: 200px; height: 1px; background: rgba(255, 255, 255, .08); position: relative; }
+        .ldr-prog { position: absolute; left: 0; top: 0; height: 100%; background: #00aaff; width: 0%; transition: width .05s linear; }
+        
+        #loader-top, #loader-bottom { position: absolute; left: 0; width: 100%; height: 50%; background: #000507; transition: transform 600ms cubic-bezier(0.76, 0, 0.24, 1); z-index: 9001; pointer-events: none; }
+        #loader-top { top: 0; }
+        #loader-bottom { bottom: 0; }
+        #loader-sweep { position: absolute; left: 0; top: 50%; width: 0%; height: 1px; background: #00aaff; z-index: 9002; transition: width 400ms cubic-bezier(0.76, 0, 0.24, 1); transform: translateY(-50%); }
+        #loader-sweep.sweep { width: 100%; }
+        #loader-content { position: relative; z-index: 9003; display: flex; flex-direction: column; align-items: center; gap: 3rem; transition: opacity 200ms; }
+    </style>
+
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:ital,wght@0,100;0,300;0,400;1,100;1,300&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div id="viewport-border"></div>
+    <div id="bloom"></div>
+    <div id="letterbox-top" class="letterbox"></div>
+    <div id="letterbox-bottom" class="letterbox"></div>
+
+    <!-- SVG FILTERS -->
+    <svg style="display:none">
+        <defs>
+            <filter id="filter-r">
+                <feColorMatrix type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0"/>
+            </filter>
+            <filter id="filter-g">
+                <feColorMatrix type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0"/>
+            </filter>
+            <filter id="filter-b">
+                <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0"/>
+            </filter>
+            <filter id="glitch-filter">
+                <feTurbulence id="glitch-turb" type="fractalNoise" baseFrequency="0.85" numOctaves="4" result="noise"/>
+                <feDisplacementMap in="SourceGraphic" in2="noise" scale="0" id="glitch-disp" xChannelSelector="R" yChannelSelector="G"/>
+            </filter>
+        </defs>
+    </svg>
+
+    <!-- CHROMATIC ABERRATION -->
+    <canvas id="ch-red" class="ch-canvas"></canvas>
+    <canvas id="ch-green" class="ch-canvas"></canvas>
+    <canvas id="ch-blue" class="ch-canvas"></canvas>
+
+    <!-- GLITCH OVERLAY -->
+    <div id="glitch-overlay">
+        <div id="glitch-flash"></div>
+    </div>
+
+    <!-- BACKGROUND LAYER -->
+    <div id="bg-layer">
+        <div id="layer-c"></div>
+        <div id="layer-b"></div>
+        <div id="layer-a">BMW</div>
+    </div>
+    <!-- VIGNETTE OVERLAY -->
+    <div id="vignette"></div>
+
+    <div id="grain"></div>
+    <div id="flash"></div>
+    <div id="cur">
+        <div id="cur-trail"></div>
+        <div id="cur-ring-wrapper">
+            <div id="cur-ring">
+                <div id="cur-text">VIEW</div>
+                <div class="ch ch-n"></div>
+                <div class="ch ch-s"></div>
+                <div class="ch ch-e"></div>
+                <div class="ch ch-w"></div>
+            </div>
+        </div>
+        <div id="cur-dot"></div>
+    </div>
+    <div id="scroll-prog"></div>
+
+    <!-- LOADER -->
+    <div id="loader" style="background:transparent;">
+        <div id="loader-top"></div>
+        <div id="loader-bottom"></div>
+        <div id="loader-sweep"></div>
+        <div id="loader-content">
+            <div class="ldr-brand">BMW<div class="ldr-fill" id="ldr-fill">BMW</div></div>
+            <div class="ldr-line"><div class="ldr-prog" id="ldr-prog"></div></div>
+            <div class="ldr-pct" id="ldr-pct">0%</div>
+        </div>
+    </div>
+
+    <!-- MAIN 3D CANVAS -->
+    <canvas id="main-canvas"></canvas>
+    <div id="bg-fallback" style="display:none; position:fixed; inset:0; z-index:-1; background:url('https://images.unsplash.com/photo-1555215695-3004980ad54e?w=1920&q=90') center/cover; opacity: 0.8;"></div>
+
+    <!-- NAV -->
+    <nav id="nav">
+        <a href="#" class="nav-logo">BMW</a>
+        <ul class="nav-links">
+            <li><a href="#" onclick="scrollToSection(1)">Models</a></li>
+            <li><a href="#" onclick="scrollToSection(3)">Performance</a></li>
+            <li><a href="#" onclick="scrollToSection(5)">Heritage</a></li>
+            <li><a href="#" onclick="scrollToSection(6)">Collection</a></li>
+        </ul>
+        <div id="mobile-menu-btn" onclick="document.getElementById('model-picker').classList.toggle('show')">
+            <span></span><span></span><span></span>
+        </div>
+    </nav>
+
+    <!-- MODEL PICKER -->
+    <div id="model-picker">
+        <div class="mpick active" onclick="jumpToModel(0)">
+            <div class="mpick-label">M4 Comp</div>
+            <div class="mpick-dot"></div>
+        </div>
+        <div class="mpick" onclick="jumpToModel(1)">
+            <div class="mpick-label">i7 Electric</div>
+            <div class="mpick-dot"></div>
+        </div>
+        <div class="mpick" onclick="jumpToModel(2)">
+            <div class="mpick-label">X5 M50i</div>
+            <div class="mpick-dot"></div>
+        </div>
+        <div class="mpick" onclick="jumpToModel(3)">
+            <div class="mpick-label">M8 Coupé</div>
+            <div class="mpick-dot"></div>
+        </div>
+    </div>
+
+    <!-- MOBILE MODEL DOTS -->
+    <div id="mobile-dots">
+        <div class="mdot active" onclick="jumpToModel(0)"></div>
+        <div class="mdot" onclick="jumpToModel(1)"></div>
+        <div class="mdot" onclick="jumpToModel(2)"></div>
+        <div class="mdot" onclick="jumpToModel(3)"></div>
+    </div>
+
+    <!-- HUD -->
+    <div id="hud">
+        <div class="hud-line">Speed <span class="hud-val" id="hud-speed">0</span> km/h</div>
+        <div class="hud-line">RPM <span class="hud-val" id="hud-rpm">0</span></div>
+        <div class="hud-line">Gear <span class="hud-val" id="hud-gear">N</span></div>
+    </div>
+
+    <!-- VIRTUAL SCROLL HEIGHT TRACKER -->
+    <div id="scroll-height" style="pointer-events:none; position:relative; z-index:0;"></div>
+
+    <!-- SCROLL ROOT -->
+    <div id="scroll-root">
+
+        <!-- S0: HERO -->
+        <section id="s0" style="height:100vh;position:relative;">
+            <div class="panel" style="height:100%;align-items:flex-end;padding-bottom:15vh;">
+                <div class="panel-content">
+                    <span class="s-label" id="l-s0">2025 — NEW GENERATION</span>
+                    <h1 class="s-headline" id="h-s0">THE<br>ULTIMATE<br><em>MACHINE</em></h1>
+                    <div class="s-body" id="b-s0">Where precision engineering meets unbridled passion. Every curve has a
+                        purpose. Every line tells a story.</div>
+                    <a href="#" class="s-cta" id="c-s0" onclick="scrollToSection(1)">
+                        Explore Now
+                        <svg width="20" height="10" viewBox="0 0 20 10" fill="none">
+                            <path d="M0 5h18M14 1l4 4-4 4" stroke="currentColor" stroke-width="1.2"
+                                stroke-linecap="round" />
+                        </svg>
+                    </a>
+                </div>
+            </div>
+            <div class="scroll-hint">
+                <div class="sh-line"></div><span class="sh-txt">Scroll to explore</span>
+            </div>
+        </section>
+
+        <!-- S1: M4 INTRO -->
+        <section id="s1" style="height:100vh;">
+            <div class="panel" style="height:100%;">
+                <div class="panel-content">
+                    <span class="s-label" id="l-s1">M SERIES · SPORT</span>
+                    <h2 class="s-headline" id="h-s1">BMW<br>M4<br><em>Competition</em></h2>
+                    <div class="spec-row" id="sp-s1">
+                        <div class="spec">
+                            <div class="spec-val">530<span class="spec-unit">hp</span></div>
+                            <div class="spec-key">Power</div>
+                        </div>
+                        <div class="spec">
+                            <div class="spec-val">3.9<span class="spec-unit">s</span></div>
+                            <div class="spec-key">0–100</div>
+                        </div>
+                        <div class="spec">
+                            <div class="spec-val">290<span class="spec-unit">+</span></div>
+                            <div class="spec-key">Top km/h</div>
+                        </div>
+                    </div>
+                    <div class="s-body" id="b-s1">Twin-turbocharged 3.0L inline-six. Carbon fibre roof. M-specific
+                        chassis with adaptive suspension. The definitive high-performance coupe.</div>
+                    <a href="#" class="s-cta" id="c-s1">Configure →</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- S2: ORBIT VIEW -->
+        <section id="s2" style="height:100vh;">
+            <div class="panel right" style="height:100%;">
+                <div class="panel-content">
+                    <span class="s-label" id="l-s2">360° PREVIEW</span>
+                    <h2 class="s-headline" id="h-s2"><em>Sculpted</em><br>BY AIR</h2>
+                    <div class="s-body" id="b-s2">Every surface shaped by aerodynamics. Drag coefficient 0.29. Active M
+                        rear spoiler. The form follows function — then transcends it.</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- S3: i7 ELECTRIC -->
+        <section id="s3" style="height:100vh;">
+            <div class="panel" style="height:100%;">
+                <div class="panel-content">
+                    <span class="s-label" id="l-s3">BMW i · ELECTRIC</span>
+                    <h2 class="s-headline" id="h-s3">i7<br><em>xDrive60</em></h2>
+                    <div class="spec-row" id="sp-s3">
+                        <div class="spec">
+                            <div class="spec-val">544<span class="spec-unit">hp</span></div>
+                            <div class="spec-key">Power</div>
+                        </div>
+                        <div class="spec">
+                            <div class="spec-val">4.7<span class="spec-unit">s</span></div>
+                            <div class="spec-key">0–100</div>
+                        </div>
+                        <div class="spec">
+                            <div class="spec-val">625<span class="spec-unit">km</span></div>
+                            <div class="spec-key">Range</div>
+                        </div>
+                    </div>
+                    <div class="s-body" id="b-s3">Dual-motor all-wheel drive. 105.7 kWh battery. Theatre Screen rear
+                        entertainment. The future of luxury — silent, swift, spectacular.</div>
+                    <a href="#" class="s-cta" id="c-s3">Discover Electric →</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- S4: PERFORMANCE DATA -->
+        <section id="s4" style="height:100vh;">
+            <div class="panel right" style="height:100%;">
+                <div class="panel-content">
+                    <span class="s-label" id="l-s4">ENGINEERING DATA</span>
+                    <h2 class="s-headline" id="h-s4">RAW<br><em>Numbers</em></h2>
+                    <div class="perf-bars" id="pb-s4">
+                        <div class="pbar-row">
+                            <span class="pbar-name">Horsepower</span>
+                            <div class="pbar-track">
+                                <div class="pbar-fill" data-w="87"></div>
+                            </div>
+                            <span class="pbar-val">627</span>
+                        </div>
+                        <div class="pbar-row">
+                            <span class="pbar-name">Torque (Nm)</span>
+                            <div class="pbar-track">
+                                <div class="pbar-fill" data-w="78"></div>
+                            </div>
+                            <span class="pbar-val">750</span>
+                        </div>
+                        <div class="pbar-row">
+                            <span class="pbar-name">Top Speed</span>
+                            <div class="pbar-track">
+                                <div class="pbar-fill" data-w="95"></div>
+                            </div>
+                            <span class="pbar-val">305</span>
+                        </div>
+                        <div class="pbar-row">
+                            <span class="pbar-name">0–100 km/h</span>
+                            <div class="pbar-track">
+                                <div class="pbar-fill" data-w="65"></div>
+                            </div>
+                            <span class="pbar-val">3.2s</span>
+                        </div>
+                        <div class="pbar-row">
+                            <span class="pbar-name">Downforce (N)</span>
+                            <div class="pbar-track">
+                                <div class="pbar-fill" data-w="55"></div>
+                            </div>
+                            <span class="pbar-val">390</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- S5: X5 SUV -->
+        <section id="s5" style="height:100vh;">
+            <div class="panel" style="height:100%;">
+                <div class="panel-content">
+                    <span class="s-label" id="l-s5">X SERIES · SUV</span>
+                    <h2 class="s-headline" id="h-s5">X5<br><em>M50i</em></h2>
+                    <div class="spec-row" id="sp-s5">
+                        <div class="spec">
+                            <div class="spec-val">523<span class="spec-unit">hp</span></div>
+                            <div class="spec-key">Power</div>
+                        </div>
+                        <div class="spec">
+                            <div class="spec-val">4.3<span class="spec-unit">s</span></div>
+                            <div class="spec-key">0–100</div>
+                        </div>
+                        <div class="spec">
+                            <div class="spec-val">V8</div>
+                            <div class="spec-key">Engine</div>
+                        </div>
+                    </div>
+                    <div class="s-body" id="b-s5">4.4L M TwinPower V8. Adaptive air suspension. xDrive intelligent
+                        all-wheel drive. 2,480 kg of dominance, redefined.</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- S6: HERITAGE TIMELINE -->
+        <section id="s6" style="height:100vh;">
+            <div class="panel" style="height:100%;align-items:flex-end;padding-bottom:12vh;">
+                <div class="panel-content" style="max-width:95vw;">
+                    <span class="s-label" id="l-s6">SINCE 1916</span>
+                    <h2 class="s-headline" id="h-s6">A CENTURY<br>OF <em>Icons</em></h2>
+                    <div class="tl-strip" id="tl">
+                        <div class="tl-item">
+                            <div class="tl-yr">1972</div>
+                            <div class="tl-model">M GmbH</div>
+                            <div class="tl-desc">Motorsport division founded</div>
+                        </div>
+                        <div class="tl-item">
+                            <div class="tl-yr">1978</div>
+                            <div class="tl-model">M1</div>
+                            <div class="tl-desc">First pure M supercar</div>
+                        </div>
+                        <div class="tl-item">
+                            <div class="tl-yr">1986</div>
+                            <div class="tl-model">E30 M3</div>
+                            <div class="tl-desc">DTM champion, road icon</div>
+                        </div>
+                        <div class="tl-item">
+                            <div class="tl-yr">2008</div>
+                            <div class="tl-model">M3 V8</div>
+                            <div class="tl-desc">Last NA M3, 414hp S65</div>
+                        </div>
+                        <div class="tl-item">
+                            <div class="tl-yr">2024</div>
+                            <div class="tl-model">M4 CS</div>
+                            <div class="tl-desc">543hp, 3.4s, pinnacle</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- S7: COLLECTION -->
+        <section id="s7" style="min-height:150vh;padding-bottom:10vh;">
+            <div style="padding:10vh 8vw 0">
+                <span class="s-label" id="l-s7">FULL LINEUP</span>
+                <h2 class="s-headline" id="h-s7">THE<br><em>Collection</em></h2>
+                <div class="coll-grid" id="coll-grid" style="margin-top:3rem;pointer-events:all;">
+                    <div class="coll-card" id="cc0">
+                        <div class="cc-cat">M Sport</div>
+                        <div class="cc-name">M4 Comp</div>
+                        <div class="cc-year">2024 · Sport Coupé</div>
+                        <div class="cc-hp">530</div>
+                        <div class="cc-line"></div>
+                        <div class="cc-spec">3.0L I6 · 530hp · 3.9s</div>
+                    </div>
+                    <div class="coll-card" id="cc1">
+                        <div class="cc-cat">Electric</div>
+                        <div class="cc-name">i7</div>
+                        <div class="cc-year">2024 · Luxury Sedan</div>
+                        <div class="cc-hp">544</div>
+                        <div class="cc-line"></div>
+                        <div class="cc-spec">Dual Motor · 544hp · 625km</div>
+                    </div>
+                    <div class="coll-card" id="cc2">
+                        <div class="cc-cat">X Series</div>
+                        <div class="cc-name">X5 M50i</div>
+                        <div class="cc-year">2024 · Premium SAV</div>
+                        <div class="cc-hp">523</div>
+                        <div class="cc-line"></div>
+                        <div class="cc-spec">4.4L V8 · 523hp · 4.3s</div>
+                    </div>
+                    <div class="coll-card" id="cc3">
+                        <div class="cc-cat">M Sport</div>
+                        <div class="cc-name">M8 GC</div>
+                        <div class="cc-year">2024 · Gran Coupé</div>
+                        <div class="cc-hp">627</div>
+                        <div class="cc-line"></div>
+                        <div class="cc-spec">4.4L V8 · 627hp · 3.2s</div>
+                    </div>
+                    <div class="coll-card" id="cc4">
+                        <div class="cc-cat">Classic</div>
+                        <div class="cc-name">E30 M3</div>
+                        <div class="cc-year">1986 · Legend</div>
+                        <div class="cc-hp">200</div>
+                        <div class="cc-line"></div>
+                        <div class="cc-spec">2.3L S14 · 200hp · DTM</div>
+                    </div>
+                    <div class="coll-card" id="cc5">
+                        <div class="cc-cat">Electric</div>
+                        <div class="cc-name">i4 M50</div>
+                        <div class="cc-year">2024 · Sport EV</div>
+                        <div class="cc-hp">544</div>
+                        <div class="cc-line"></div>
+                        <div class="cc-spec">Dual Motor · 544hp · 3.9s</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FOOTER -->
+        <div class="footer-ticker">
+            <div class="ticker-text">THE ULTIMATE DRIVING MACHINE · SINCE 1916 · MUNICH GERMANY · M POWER · THE ULTIMATE DRIVING MACHINE · SINCE 1916 · MUNICH GERMANY · M POWER · </div>
+            <div class="ticker-text">THE ULTIMATE DRIVING MACHINE · SINCE 1916 · MUNICH GERMANY · M POWER · THE ULTIMATE DRIVING MACHINE · SINCE 1916 · MUNICH GERMANY · M POWER · </div>
+        </div>
+        <footer
+            style="padding:4rem 8vw;border-top:1px solid rgba(255,255,255,.05);display:flex;justify-content:space-between;align-items:center;pointer-events:all;position:relative;z-index:2;">
+            <div style="font-family:var(--f-display);font-size:2rem;letter-spacing:.2em">BMW</div>
+            <div style="font-size:10px;letter-spacing:.2em;color:var(--chrome)">© 2025 BAVARIAN MOTOR WORKS</div>
+            <div style="font-size:10px;letter-spacing:.2em;color:var(--chrome)">MUNICH, GERMANY</div>
+        </footer>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" defer></script>
+    <script src="script.js" defer></script>
+</body>
+
+</html>
+bmw-cinematic.html
+Displaying bmw-cinematic.html.

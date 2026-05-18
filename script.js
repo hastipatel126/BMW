@@ -24,8 +24,11 @@
         }
 
         let isMobile = window.innerWidth <= 768;
+        let isTablet = window.innerWidth > 768 && window.innerWidth <= 1024;
+        let isLowEnd = (navigator.deviceMemory && navigator.deviceMemory < 4) || (navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4);
         function resize() {
             isMobile = window.innerWidth <= 768;
+            isTablet = window.innerWidth > 768 && window.innerWidth <= 1024;
             renderer.setSize(innerWidth, innerHeight);
             camera.aspect = innerWidth / innerHeight;
             camera.updateProjectionMatrix();
@@ -858,8 +861,18 @@
         }
         window.addEventListener('load', updateScrollHeight);
 
+        let scrollTimeout = null;
+        function setScrollingState() {
+            document.body.classList.add('is-scrolling');
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                document.body.classList.remove('is-scrolling');
+            }, 150);
+        }
+
         window.addEventListener('wheel', (e) => {
             e.preventDefault();
+            setScrollingState();
             targetY += e.deltaY * 0.8;
             const maxScroll = Math.max(0, getTotalHeight());
             targetY = Math.max(0, Math.min(maxScroll, targetY));
@@ -872,6 +885,7 @@
 
         window.addEventListener('touchmove', (e) => {
             e.preventDefault();
+            setScrollingState();
             const touchY = e.touches[0].clientY;
             const deltaY = touchStartY - touchY;
             touchStartY = touchY;

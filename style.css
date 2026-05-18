@@ -1090,6 +1090,10 @@
         }
 
         /* ─── FINAL POLISH ELEMENTS ─── */
+        body.is-scrolling * {
+            pointer-events: none !important;
+        }
+
         @property --gradient-angle {
             syntax: "<angle>";
             initial-value: 135deg;

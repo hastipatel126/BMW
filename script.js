@@ -94,7 +94,6 @@
         bgUrls.forEach((url, idx) => {
             const img = new Image();
             if (idx === 0) img.fetchPriority = "high";
-            else img.loading = "lazy";
             img.src = url;
             img.onload = () => loadedImgs++;
 

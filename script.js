@@ -1,20 +1,5 @@
-function showFallback(err) {
-    const l = document.getElementById('loader'); if(l) l.style.display = 'none';
-    const c = document.getElementById('main-canvas'); if(c) c.style.display = 'none';
-    const errBox = document.createElement('div');
-    errBox.style = "position:fixed;top:10px;left:10px;background:red;color:white;padding:10px;z-index:9999;font-family:monospace;max-width:90%;word-wrap:break-word;";
-    errBox.innerText = "CRITICAL ERROR: " + (err ? err.message : "WebGL not supported.");
-    document.body.appendChild(errBox);
-    document.querySelectorAll('.s-headline, .s-body, .s-cta').forEach(el => el.classList.add('vis'));
-    const sr = document.getElementById('scroll-root'); if(sr) sr.style.transform = 'none';
-    document.body.style.overflow = 'auto';
-}
-
-if (!window.WebGLRenderingContext) {
-    showFallback();
-} else {
-try {
-        let sceneReady = false;
+function init() {
+    let sceneReady = false;
 
 // ════════════════════════════════════════
         // CORE SETUP
@@ -1155,6 +1140,7 @@ try {
                 loadedImgs = 6; // Force skip
                 loadPct = 100;
             }
+            if (typeof pageFullyLoaded !== 'undefined') pageFullyLoaded = true;
         }, 4000);
 
         const loadInterval = setInterval(() => {
@@ -1185,6 +1171,7 @@ try {
                         setTimeout(() => {
                             if (loader) loader.style.display = 'none';
                             sceneReady = true;
+                            if (typeof pageFullyLoaded !== 'undefined') pageFullyLoaded = true;
                             // Hero text reveal
                             document.getElementById('l-s0').classList.add('vis');
                             document.getElementById('h-s0').classList.add('vis');
@@ -1201,72 +1188,102 @@ try {
         }, 40);
 
         // Audio Context & Master Gain
-        let audioCtx;
+        let audioCtx = null;
         let masterGain;
+        let userHasInteracted = false;
+        let pageFullyLoaded = false;
 
-        function initAudio() {
+        async function getAudioContext() {
             if (!audioCtx) {
                 try {
                     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                     masterGain = audioCtx.createGain();
                     masterGain.gain.value = 0.4;
                     masterGain.connect(audioCtx.destination);
-                } catch (e) { return false; }
+                } catch (e) { return null; }
             }
-            return true;
+            if (audioCtx && audioCtx.state === 'suspended') {
+                await audioCtx.resume();
+            }
+            return audioCtx;
         }
 
-        function playEngRev(startF = 90, endF = null, dur = 0.4) {
-            if (!initAudio()) return;
-            const o = audioCtx.createOscillator(), g = audioCtx.createGain(), d = audioCtx.createWaveShaper();
+        const unlockAudio = async () => {
+            if (!userHasInteracted) {
+                userHasInteracted = true;
+                await getAudioContext();
+                document.removeEventListener('click', unlockAudio);
+                document.removeEventListener('touchstart', unlockAudio);
+                const muteBtn = document.getElementById('mute-btn');
+                if (muteBtn) muteBtn.innerText = '🔊';
+            }
+        };
+        document.addEventListener('click', unlockAudio);
+        document.addEventListener('touchstart', unlockAudio);
+
+        async function playEngRev(startF = 90, endF = null, dur = 0.4) {
+            if (!userHasInteracted) return;
+            const ctx = await getAudioContext();
+            if (!ctx) return;
+            const o = ctx.createOscillator(), g = ctx.createGain(), d = ctx.createWaveShaper();
             const curve = new Float32Array(256);
             for (let i = 0; i < 256; i++) { const x = i * 2 / 256 - 1; curve[i] = (Math.PI + 200) * x / (Math.PI + 200 * Math.abs(x)); }
             d.curve = curve; d.oversample = '4x';
             o.connect(d); d.connect(g); g.connect(masterGain);
             o.type = 'sawtooth';
-            o.frequency.setValueAtTime(startF, audioCtx.currentTime);
+            o.frequency.setValueAtTime(startF, ctx.currentTime);
             
             if (endF !== null) {
-                o.frequency.exponentialRampToValueAtTime(endF, audioCtx.currentTime + dur * 0.8);
-                o.frequency.exponentialRampToValueAtTime(startF * 0.6, audioCtx.currentTime + dur);
+                o.frequency.exponentialRampToValueAtTime(endF, ctx.currentTime + dur * 0.8);
+                o.frequency.exponentialRampToValueAtTime(startF * 0.6, ctx.currentTime + dur);
             } else {
-                o.frequency.exponentialRampToValueAtTime(startF * 2.5, audioCtx.currentTime + dur * 0.3);
-                o.frequency.exponentialRampToValueAtTime(startF * 0.6, audioCtx.currentTime + dur);
+                o.frequency.exponentialRampToValueAtTime(startF * 2.5, ctx.currentTime + dur * 0.3);
+                o.frequency.exponentialRampToValueAtTime(startF * 0.6, ctx.currentTime + dur);
             }
             
-            g.gain.setValueAtTime(0.1, audioCtx.currentTime);
-            g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
-            o.start(); o.stop(audioCtx.currentTime + dur);
+            g.gain.setValueAtTime(0.1, ctx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+            o.start(); o.stop(ctx.currentTime + dur);
         }
 
-        function playThump() {
-            if (!initAudio()) return;
-            const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        async function playThump() {
+            if (!userHasInteracted || !pageFullyLoaded) return;
+            const ctx = await getAudioContext();
+            if (!ctx) return;
+            const o = ctx.createOscillator(), g = ctx.createGain();
             o.connect(g); g.connect(masterGain);
             o.type = 'sine';
-            o.frequency.setValueAtTime(40, audioCtx.currentTime);
-            o.frequency.exponentialRampToValueAtTime(20, audioCtx.currentTime + 0.2);
-            g.gain.setValueAtTime(0.06, audioCtx.currentTime);
-            g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
-            o.start(); o.stop(audioCtx.currentTime + 0.2);
+            o.frequency.setValueAtTime(40, ctx.currentTime);
+            o.frequency.exponentialRampToValueAtTime(20, ctx.currentTime + 0.2);
+            g.gain.setValueAtTime(0.06, ctx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+            o.start(); o.stop(ctx.currentTime + 0.2);
         }
 
-        function playCrackle() {
-            if (!initAudio()) return;
-            const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        async function playCrackle() {
+            if (!userHasInteracted || !pageFullyLoaded) return;
+            const ctx = await getAudioContext();
+            if (!ctx) return;
+            const o = ctx.createOscillator(), g = ctx.createGain();
             o.connect(g); g.connect(masterGain);
             o.type = 'square';
-            o.frequency.setValueAtTime(1200, audioCtx.currentTime);
-            o.frequency.linearRampToValueAtTime(800, audioCtx.currentTime + 0.15);
-            g.gain.setValueAtTime(0.03, audioCtx.currentTime);
-            g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
-            o.start(); o.stop(audioCtx.currentTime + 0.15);
+            o.frequency.setValueAtTime(1200, ctx.currentTime);
+            o.frequency.linearRampToValueAtTime(800, ctx.currentTime + 0.15);
+            g.gain.setValueAtTime(0.03, ctx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+            o.start(); o.stop(ctx.currentTime + 0.15);
         }
 
         document.querySelectorAll('.coll-card').forEach(c => c.addEventListener('mouseenter', () => playEngRev(85, null, 0.3)));
         document.querySelectorAll('.s-cta, .mpick').forEach(el => el.addEventListener('click', () => playEngRev(110, 280, 0.4)));
 
-} catch(err) {
-    showFallback(err);
 }
+
+try {
+    if (!window.WebGLRenderingContext) throw new Error("WebGL not supported");
+    init();
+} catch (err) {
+    console.error('INIT FAILED:', err);
+    document.body.style.background = '#0a0a0a';
+    document.body.innerHTML = '<div style="color:white;display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;">BMW — Loading Error. Please refresh.</div>';
 }
